@@ -1,4 +1,8 @@
 import streamlit as st
+import json
 
+config_file = open('config.json')
 
-st.title('Survey Title')
+config = json.load(config_file)
+
+st.title(config['title'])
