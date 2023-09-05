@@ -14,3 +14,12 @@ st.title(config['title'])
 st.write(config['description'])
 
 consent_form()
+
+
+if st.session_state['consent']:
+
+    personal_information()
+
+    instructions()
+
+    instructions_table()
