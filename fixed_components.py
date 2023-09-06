@@ -35,6 +35,7 @@ def safe_var(key):
 # Insert consent
 def add_consent():
     st.session_state['consent'] = True
+    data = st.session_state['data']
 
 
 def consent_form():
@@ -42,7 +43,7 @@ def consent_form():
     with placeholder.container():
         with st.expander("Consent", expanded=True):
             st.markdown("""
-            By submitting the form below you agree to your data being used for research. 
+            By submitting the form below you agree to your data being used for research purposes. 
             """)
             agree = st.checkbox("I understand and consent.")
             if agree:
@@ -132,4 +133,4 @@ def instructions_table():
             plt.tight_layout()
             st.pyplot(fig, use_container_width=True)
 
-    st.write(CAPTION_INSTRUCTIONS)
+            st.write(CAPTION_INSTRUCTIONS)
