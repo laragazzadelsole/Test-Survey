@@ -1,0 +1,6 @@
+streamlit==1.25.0
+streamlit-aggrid==0.3.4.post3
+streamlit-survey==0.1.0
+pandas==2.1.0
+matplotlib==3.7.2
+requests==2.31.0
