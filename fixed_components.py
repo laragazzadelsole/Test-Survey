@@ -3,12 +3,10 @@ import streamlit.components.v1 as components
 from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 #from google.oauth2 import service_account
 #import gspread
 #from oauth2client.service_account import ServiceAccountCredentials
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode, JsCode
-import streamlit.components.v1 as components
 import requests
 import io
 
