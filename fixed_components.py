@@ -136,9 +136,16 @@ def instructions_table():
 
 
 def question_1(config):
-    x_axis = range(config['min_value_graph_1'], config['max_value_graph_1'], config['bin_size_graph_1'])
+    x_axis = range(
+    int(config['min_value_graph_1']),
+    int(config['max_value_graph_1']),
+    int(config['bin_size_graph_1']))
+
+    
     y_axis = np.zeros(len(x_axis))
     df = pd.DataFrame(list(zip(x_axis, y_axis)))
+
+    #df.rename(columns = {'0': config['first_column_question_1'], '1': config['second_column_question_1'] }, inplace = True)
     data_container = st.container()
 
     with data_container:
@@ -147,16 +154,18 @@ def question_1(config):
 
             # Set up Ag-Grid options
             gb = GridOptionsBuilder()
-            gb.configure_column("Probability", editable=False, resizable=True)
-            gb.configure_column("Percentage", editable=True, resizable=True)
+            gb.configure_column("0", editable=False, resizable=True)
+            gb.configure_column("1", editable=True, resizable=True)
 
             # Initialize Ag-Grid
             grid_return = AgGrid(df, gridOptions=gb.build(), height=400, fit_columns_on_grid_load = True, update_mode=GridUpdateMode.VALUE_CHANGED)
 
             # Get the modified data from Ag-Grid
             bins_grid = grid_return["data"]
-            #st_aggrid(bins_grid, height=400, fit_columns_on_grid_load=True)
 
+           
+            #st_aggrid(bins_grid, height=400, fit_columns_on_grid_load=True)
+            '''
             # Initialize the counter
             total_percentage = 100
             # Calculate the new total sum
@@ -174,12 +183,12 @@ def question_1(config):
                 st.write(f"**You still have to allocate {percentage_difference} percent probability.**")
             else:
                 st.write(f'**:red[You have inserted {abs(percentage_difference)} percent more, please review your percentage distribution.]**')
-
+            
         with plot:
         # Display the distribution of probabilities with a bar chart 
         
             fig, ax = plt.subplots()
-            ax.bar(df, bins_grid['Percentage'])
+            ax.bar(df, bins_grid['1'])
             ax.set_xlabel('Probability Bins')
             ax.set_ylabel('Percentage of Beliefs')
             ax.set_title('Distribution of Beliefs about the Impact on the Number of Products that Firms Export')
@@ -187,8 +196,8 @@ def question_1(config):
             ax.set_xticklabels(df, rotation=80)
             plt.tight_layout()
             st.pyplot(fig, use_container_width=True)
-
+'''
     new_bins_df = pd.DataFrame(bins_grid)
 
 
-    return new_bins_df, fig, bins_grid
+    return new_bins_df, bins_grid

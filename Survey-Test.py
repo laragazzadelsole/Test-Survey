@@ -23,4 +23,4 @@ if st.session_state['consent']:
     st.subheader(config['title_question_1'])
     st.write(config['subtitle_question_1'])
 
-    new_bins_df, fig, bins_grid = question_1()
+    new_bins_df, bins_grid = question_1(config)
