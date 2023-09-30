@@ -7,9 +7,12 @@ import matplotlib.pyplot as plt
 #import gspread
 #from oauth2client.service_account import ServiceAccountCredentials
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode, JsCode
-import requests
 import io
 import numpy as np
+import requests
+from requests_oauthlib import OAuth2Session
+import csv
+
 
 def initialize_session_state():
     if 'key' not in st.session_state:
@@ -117,7 +120,6 @@ def instructions_table():
 
             df['Temperature'] = df['Temperature'].astype('str')
 
-
             # Initialize Ag-Grid
             grid_return = AgGrid(df, gridOptions=gb.build(), height=400, fit_columns_on_grid_load=True)
             bins_grid = grid_return["data"]
@@ -132,14 +134,14 @@ def instructions_table():
             plt.tight_layout()
             st.pyplot(fig, use_container_width=True)
 
-            st.write(CAPTION_INSTRUCTIONS)
+        st.write(CAPTION_INSTRUCTIONS)
 
 
 def question_1(config):
     x_axis = range(
     int(config['min_value_graph_1']),
     int(config['max_value_graph_1']),
-    int(config['bin_size_graph_1']))
+    int(config['step_size_graph_1']))
 
     
     y_axis = np.zeros(len(x_axis))
@@ -201,3 +203,25 @@ def question_1(config):
 
 
     return new_bins_df, bins_grid
+
+
+# Submission button + saving data 
+
+def add_submission(new_bins_df):
+    st.session_state['submit'] = True 
+    
+    # Update session state
+    data = st.session_state['data']
+
+    USER_FULL_NAME = 'User Full Name'
+    USER_PROF_CATEGORY = 'User Professional Category'
+    USER_POSITION = 'User Working Position'
+    MIN_EFF_SIZE = 'Minimum Effect Size'
+
+    data[MIN_EFF_SIZE].append(safe_var('input_question_1'))
+    data[USER_FULL_NAME].append(safe_var('user_full_name'))
+    data[USER_POSITION].append(safe_var('user_position'))
+    data[USER_PROF_CATEGORY].append(safe_var('professional_category'))
+
+    st.session_state['data'] = data
+    session_state_df = pd.DataFrame(data)

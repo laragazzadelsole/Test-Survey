@@ -9,8 +9,8 @@ initialize_session_state()
 config_file = open('config.json')
 config = json.load(config_file)
 
-st.title(config['title'])
-st.write(config['description'])
+st.title(config['survey_title'])
+st.write(config['survey_description'])
 
 consent_form()
 
