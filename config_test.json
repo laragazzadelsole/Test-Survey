@@ -1,1 +1,27 @@
-{"title": "Title", "description": "Descrption", "title_question_1": "Question 1", "subtitle_question_1": "Body of question 1", "first_column_question_1": "0", "second_column__question_1": "1", "min_value_graph_1": 0.0, "max_value_graph_1": 10.0, "step_size_graph_1": 1.0}
+{
+    "survey_title": "Title",
+    "survey_description": "Description",
+    
+    "title_question_1": "Question 1",
+    "subtitle_question_1": "Body of question 1",
+    "column_1_question_1": "Hola",
+    "column_2_question_1": "Adios",
+    "min_value_graph_1": 0.0,
+    "max_value_graph_1": 11.0,
+    "step_size_graph_1": 1.0,
+    "title_x_axis_question_1": "x-axis",
+    "title_y_axis_question_1": "y-axis",
+    "title_barchart_question_1": "Distribution of Beliefs",
+
+    "title_question_2": "Question 2",
+    "subtitle_question_2": "Body of question 2",
+    "column_1_question_2": "Hola",
+    "column_2_question_2": "Adios",
+    "min_value_graph_2": 0.0,
+    "max_value_graph_2": 21.0,
+    "step_size_graph_2": 1.0,
+    "title_x_axis_question_2": "x-axis",
+    "title_y_axis_question_2": "y-axis",
+    "title_barchart_question_2": "Distribution of Beliefs"
+  }
+  
