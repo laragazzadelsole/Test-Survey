@@ -2,15 +2,18 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import numpy as np
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode, JsCode
 import io
 import numpy as np
 import requests
+from google.oauth2 import service_account
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 from requests_oauthlib import OAuth2Session
 import csv
 from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
+from fixed_components import *
 
 def initialize_session_state():
     if 'key' not in st.session_state:
@@ -24,7 +27,17 @@ def initialize_session_state():
             'Minimum Effect Size': [],
             'User Full Name': [],
             'User Working Position': [],
-            'User Professional Category': []
+            'User Professional Category': [],
+            'Minimum Effect Size Q1': [],
+            'Minimum Effect Size Q2': [],    
+            'Minimum Effect Size Q3': [],
+            'Minimum Effect Size Q4': [],
+            'Minimum Effect Size Q5': [],
+            'Minimum Effect Size Q6': [],
+            'Minimum Effect Size Q7': [],
+            'Minimum Effect Size Q8': [],
+            'Minimum Effect Size Q9': [],
+            'Minimum Effect Size Q10': []
         }
     
 def safe_var(key):
@@ -32,208 +45,148 @@ def safe_var(key):
         return st.session_state[key]
     #return st.session_state['No answer']
 
+def survey_title_subtitle(header_config):
+    st.title(header_config['survey_title'])
+    st.write(header_config['survey_description'])
 
 
-def question_1(config_test):
+def create_question(jsonfile_name):
 
-    data_container = st.container()
-    placeholder = st.empty()
-    with placeholder.container():
-        with st.expander("Question 1", expanded=True):
+    first_value = str(jsonfile_name['first_value'])
+    min_value = float(jsonfile_name['min_value'])
+    max_value = float(jsonfile_name['max_value'])
+    interval = float(jsonfile_name['step_size'])
+    last_value = str(jsonfile_name['last_value'])
+    # Create a list of ranges based on the provided values
+    x_axis = [f"{i}-{(i+interval)}" for i in range(int(min_value), int(max_value), int(interval))]
+    # Add first_value at the beginning
+    x_axis.insert(0, first_value)
 
-            st.subheader(config_test['title_question_1'])
-            st.write(config_test['subtitle_question_1'])
+    # Add last_value at the end
+    x_axis.append(last_value) 
 
-            x_axis_question_1 = range(
-            int(config_test['min_value_graph_1']),
-            int(config_test['max_value_graph_1']),
-            int(config_test['step_size_graph_1']))
+    y_axis = np.zeros(len(x_axis))
+    #x_axis_2 = range(config_test['min_value_graph_2'], config_test['max_value_graph_2'], config_test['step_size_graph_2'])
+    y_axis = np.zeros(len(x_axis))
+    data = pd.DataFrame(list(zip(x_axis, y_axis)), columns=[jsonfile_name['column_1'], jsonfile_name['column_2']])
 
-            
-            y_axis_question_1 = np.zeros(len(x_axis_question_1))
-            question_1_df = pd.DataFrame(list(zip(x_axis_question_1, y_axis_question_1)))
-            
-            question_1_df.rename(columns = {'0': config_test['column_1_question_1'], '1': config_test['column_2_question_1'] }, inplace = True)
-            data_container = st.container()
-
-            with data_container:
-                table_1, plot_1 = st.columns([0.3, 0.7], gap = "large")
-                with table_1:
-
-                    # Set up Ag-Grid options
-                    gb_1 = GridOptionsBuilder()
-                    gb_1.configure_column("0", header_name= config_test['column_1_question_1'], editable=False, resizable=True)
-                    gb_1.configure_column("1", header_name= config_test['column_2_question_1'], editable=True, resizable=True)
-
-                    # Initialize Ag-Grid
-                    grid_return_1 = AgGrid(question_1_df, gridOptions=gb_1.build(), height=400, fit_columns_on_grid_load = True, update_mode=GridUpdateMode.VALUE_CHANGED)
-
-                    # Get the modified data from Ag-Grid
-                    bins_grid_question_1 = grid_return_1["data"]
-                    
-                    st.write(bins_grid_question_1)
-                    #st_aggrid(bins_grid, height=400, fit_columns_on_grid_load=True)
-                    
-                    # Initialize the counter
-                    total_percentage_question_1 = int(100)
-                    # Calculate the new total sum
-                    percentage_inserted_question_1 = sum(bins_grid_question_1.iloc[:, 1])
-                    # Calculate the difference in sum
-                    percentage_difference_question_1 = total_percentage_question_1 - percentage_inserted_question_1
-                    # Update the counter
-                    total_percentage_question_1 = percentage_difference_question_1
-
-                    # Display the counter
-                    if percentage_difference_question_1 >= 0:
-                        st.write(f"**You still have to allocate {percentage_difference_question_1} percent probability.**")
-                    else:
-                        st.write(f'**:red[You have inserted {abs(percentage_difference_question_1)} percent more, please review your percentage distribution.]**')
-                
-                num_bins_question_1 = len(bins_grid_question_1.iloc[:, 0])
-
-                with plot_1:
-                    # Calculate dynamic values based on the number of bins
-                    if (num_bins_question_1 <= 15):
-
-                        figsize_width = num_bins_question_1 * 0.40 # Adjust the multiplier as needed
-                        title_fontsize = max(num_bins_question_1 * 0.25, 10)  # Adjust the minimum fontsize as needed
-                        label_fontsize = max(num_bins_question_1 * 0.25, 8)  # Adjust the minimum fontsize as needed
-                        tick_fontsize = max(num_bins_question_1 * 0.25, 5)   # Adjust the minimum fontsize as needed
-                    elif (15 < num_bins_question_1 <= 25):
-                        figsize_width = num_bins_question_1 * 0.16 # Adjust the multiplier as needed
-                        title_fontsize = max(num_bins_question_1 * 0.16, 10)  # Adjust the minimum fontsize as needed
-                        label_fontsize = max(num_bins_question_1 * 0.16, 8)  # Adjust the minimum fontsize as needed
-                        tick_fontsize = max(num_bins_question_1 * 0.16, 5)   # Adjust the minimum fontsize as needed
-
-                    elif (25 < num_bins_question_1 <= 35):
-                        figsize_width = num_bins_question_1 * 0.09 # Adjust the multiplier as needed
-                        title_fontsize = max(num_bins_question_1 * 0.1, 10)  # Adjust the minimum fontsize as needed
-                        label_fontsize = max(num_bins_question_1 * 0.1, 8)  # Adjust the minimum fontsize as needed
-                        tick_fontsize = max(num_bins_question_1 * 0.1, 5)   # Adjust the minimum fontsize as needed                        
-                    # Create the figure with dynamic figsize
-                    fig_1, ax_1 = plt.subplots(figsize=(figsize_width, 2.5))  # Adjust the height (2.5) as needed
-
-                    # Your data plotting code
-                    ax_1.bar(bins_grid_question_1.iloc[:, 0], bins_grid_question_1.iloc[:, 1])
-                    ax_1.set_xlabel(config_test['title_x_axis_question_1'], fontsize=label_fontsize)
-                    ax_1.set_ylabel(config_test['title_y_axis_question_1'], fontsize=label_fontsize)
-                    ax_1.set_title(config_test['title_barchart_question_1'], fontsize=title_fontsize)
-                    ax_1.set_xticks(bins_grid_question_1.iloc[:, 0])
-                    ax_1.set_xticklabels(bins_grid_question_1.iloc[:, 0], fontsize=tick_fontsize)
-                    ax_1.set_yticks(range(0, 101, 10))
-                    ax_1.set_yticklabels(range(0, 101, 10), fontsize=tick_fontsize)
-
-                    fig_1.subplots_adjust(top=0.9, right=0.95)
-                    plt.tight_layout()
-                    st.pyplot(fig_1, use_container_width=False)
-
-            updated_bins_question_1_df = pd.DataFrame(bins_grid_question_1)
-
-            return updated_bins_question_1_df
-
-def question_2(config_test):
+    st.subheader(jsonfile_name['title_question'])
+    st.write(jsonfile_name['body_question'])
 
     data_container = st.container()
-    placeholder = st.empty()
-    with placeholder.container():
-        with st.expander("Question 2", expanded=True):
+    with data_container:
+        table, plot = st.columns([0.4, 0.6], gap="large")
 
-            st.subheader(config_test['title_question_2'])
-            st.write(config_test['subtitle_question_2'])
-
-            x_axis_question_2 = range(
-            int(config_test['min_value_graph_2']),
-            int(config_test['max_value_graph_2']),
-            int(config_test['step_size_graph_2']))
-
+        with table:
+            bins_grid = st.data_editor(data, key= jsonfile_name['key'], use_container_width=True, hide_index=True, disabled=[jsonfile_name['column_1']])
             
-            y_axis_question_2 = np.zeros(len(x_axis_question_2))
-            question_2_df = pd.DataFrame(list(zip(x_axis_question_2, y_axis_question_2)))
+            # Initialize the counter
+            total_percentage = int(100)
+            # Calculate the new total sum
+            percentage_inserted= sum(bins_grid[jsonfile_name['column_2']])
+            # Calculate the difference in sum
+            percentage_difference = total_percentage - percentage_inserted
+            # Update the counter
+            total_percentage = percentage_difference
+
+            # Display the counter
+            if percentage_difference >= 0:
+                st.write(f"**You still have to allocate {percentage_difference} percent probability.**")
+            else:
+                st.write(f'**:red[You have inserted {abs(percentage_difference)} percent more, please review your percentage distribution.]**')
+
+            num_bins = len(bins_grid)
             
-            question_2_df.rename(columns = {'0': config_test['column_1_question_2'], '1': config_test['column_2_question_2'] }, inplace = True)
-            data_container_2 = st.container()
+        with plot:
+            # Create bar chart with Altair
+            chart = alt.Chart(bins_grid).mark_bar().encode(
+                x=alt.X(jsonfile_name['column_1'], sort=None),
+                y=jsonfile_name['column_2']
+            )
 
-            with data_container_2:
-                table_2, plot_2 = st.columns([0.3, 0.7], gap = "large")
-                with table_2:
+            # Display the chart using st.altair_chart
+            st.altair_chart(chart, use_container_width=True)
+        
+    st.write(jsonfile_name['effect_size'])
+    st.number_input('Click to increase and decrease the counter or directly insert the number.', min_value=0, max_value=10000, key = jsonfile_name['num_input_question'])
 
-                    # Set up Ag-Grid options
-                    gb_2 = GridOptionsBuilder()
-                    gb_2.configure_column("0", header_name= config_test['column_1_question_2'], editable=False, resizable=True)
-                    gb_2.configure_column("1", header_name= config_test['column_2_question_2'], editable=True, resizable=True)
+    # Return the updated DataFrame
+    updated_bins_df = pd.DataFrame(bins_grid)
+    
+    return updated_bins_df, percentage_difference, num_bins
 
-                    # Initialize Ag-Grid
-                    grid_return_2 = AgGrid(question_2_df, gridOptions=gb_2.build(), height=400, fit_columns_on_grid_load = True, update_mode=GridUpdateMode.VALUE_CHANGED)
-
-                    # Get the modified data from Ag-Grid
-                    bins_grid_question_2 = grid_return_2["data"]
-                    #bins_grid_question_2 = pd.concat([question_2_df, new_data], ignore_index=True)
-                    
-                    st.write(bins_grid_question_2)
-                    #st_aggrid(bins_grid, height=400, fit_columns_on_grid_load=True)
-                    
-                    # Initialize the counter
-                    total_percentage_question_2 = int(100)
-                    # Calculate the new total sum
-                    percentage_inserted_question_2 = sum(bins_grid_question_2.iloc[:, 1])
-                    # Calculate the difference in sum
-                    percentage_difference_question_2 = total_percentage_question_2 - percentage_inserted_question_2
-                    # Update the counter
-                    total_percentage_question_2 = percentage_difference_question_2
-
-                    # Display the counter
-                    if percentage_difference_question_2 >= 0:
-                        st.write(f"**You still have to allocate {percentage_difference_question_2} percent probability.**")
-                    else:
-                        st.write(f'**:red[You have inserted {abs(percentage_difference_question_2)} percent more, please review your percentage distribution.]**')
-                
-                num_bins_question_2 = len(bins_grid_question_2.iloc[:, 0])
-
-                with plot_2:
-                    # Calculate dynamic values based on the number of bins
-                    if (num_bins_question_2 <= 15):
-
-                        figsize_width_2 = num_bins_question_2 * 0.40 # Adjust the multiplier as needed
-                        title_fontsize_2 = max(num_bins_question_2 * 0.25, 10)  # Adjust the minimum fontsize as needed
-                        label_fontsize_2 = max(num_bins_question_2 * 0.25, 8)  # Adjust the minimum fontsize as needed
-                        tick_fontsize_2 = max(num_bins_question_2 * 0.25, 5)   # Adjust the minimum fontsize as needed
-                    elif (15 < num_bins_question_2 <= 25):
-                        figsize_width_2 = num_bins_question_2 * 0.16 # Adjust the multiplier as needed
-                        title_fontsize_2 = max(num_bins_question_2 * 0.16, 10)  # Adjust the minimum fontsize as needed
-                        label_fontsize_2 = max(num_bins_question_2 * 0.16, 8)  # Adjust the minimum fontsize as needed
-                        tick_fontsize_2 = max(num_bins_question_2 * 0.16, 5)   # Adjust the minimum fontsize as needed
-
-                    elif (25 < num_bins_question_2 <= 35):
-                        figsize_width_2 = num_bins_question_2 * 0.09 # Adjust the multiplier as needed
-                        title_fontsize_2 = max(num_bins_question_2 * 0.1, 10)  # Adjust the minimum fontsize as needed
-                        label_fontsize_2 = max(num_bins_question_2 * 0.1, 8)  # Adjust the minimum fontsize as needed
-                        tick_fontsize_2 = max(num_bins_question_2 * 0.1, 5)   # Adjust the minimum fontsize as needed      
-
-                    # Create the figure with dynamic figsize
-                    fig_2, ax_2 = plt.subplots(figsize=(figsize_width_2, 2.5))  # Adjust the height (2.5) as needed
-
-                    ax_2.bar(bins_grid_question_2.iloc[:, 0], bins_grid_question_2.iloc[:, 1])
-                    ax_2.set_xlabel(config_test['title_x_axis_question_2'], fontsize=label_fontsize_2)
-                    ax_2.set_ylabel(config_test['title_y_axis_question_2'], fontsize=label_fontsize_2)
-                    ax_2.set_title(config_test['title_barchart_question_2'], fontsize=title_fontsize_2)
-                    ax_2.set_xticks(bins_grid_question_2.iloc[:, 0])
-                    ax_2.set_xticklabels(bins_grid_question_2.iloc[:, 0], fontsize=tick_fontsize_2)
-                    ax_2.set_yticks(range(0, 101, 10))
-                    ax_2.set_yticklabels(range(0, 101, 10), fontsize=tick_fontsize_2)
-
-                    fig_2.subplots_adjust(top=0.9, right=0.95)
-                    plt.tight_layout()
-                    st.pyplot(fig_2, use_container_width=False)
-
-            updated_bins_question_2_df = pd.DataFrame(bins_grid_question_2)
-
-            return updated_bins_question_2_df
-
-
-# Submission button + saving data 
-
-def add_submission(updated_bins_question_1_df, updated_bins_question_2_df):
+def add_submission(updated_bins_question_1_df, updated_bins_question_2_df, updated_bins_question_3_df, updated_bins_question_4_df, updated_bins_question_5_df, updated_bins_question_6_df, updated_bins_question_7_df, updated_bins_question_8_df, updated_bins_question_9_df, updated_bins_question_10_df):
     st.session_state['submit'] = True 
+    
+    updated_bins_list = [updated_bins_question_1_df, updated_bins_question_2_df, updated_bins_question_3_df, updated_bins_question_4_df, updated_bins_question_5_df, updated_bins_question_6_df, updated_bins_question_7_df, updated_bins_question_8_df, updated_bins_question_9_df, updated_bins_question_10_df]
+    transposed_bins_list = []
+
+    for df in updated_bins_list:
+        transposed_df = df.transpose()
+        transposed_bins_list.append(transposed_df)
+    
+    # Extracting the first row of each transposed dataframe as column names
+    column_names_q1 = list(transposed_bins_list[0].iloc[0])
+    column_names_q2 = list(transposed_bins_list[1].iloc[0])
+    column_names_q3 = list(transposed_bins_list[2].iloc[0])
+    column_names_q4 = list(transposed_bins_list[3].iloc[0])
+    column_names_q5 = list(transposed_bins_list[4].iloc[0])
+    column_names_q6 = list(transposed_bins_list[5].iloc[0])
+    column_names_q7 = list(transposed_bins_list[6].iloc[0])
+    column_names_q8 = list(transposed_bins_list[7].iloc[0])
+    column_names_q9 = list(transposed_bins_list[8].iloc[0])
+    column_names_q10 = list(transposed_bins_list[9].iloc[0])
+
+    # Setting the column names for each dataframe
+    transposed_bins_list[0].columns = column_names_q1
+    transposed_bins_list[1].columns = column_names_q2
+    transposed_bins_list[2].columns = column_names_q3
+    transposed_bins_list[3].columns = column_names_q4
+    transposed_bins_list[4].columns = column_names_q5
+    transposed_bins_list[5].columns = column_names_q6
+    transposed_bins_list[6].columns = column_names_q7
+    transposed_bins_list[7].columns = column_names_q8
+    transposed_bins_list[8].columns = column_names_q9
+    transposed_bins_list[9].columns = column_names_q10
+
+    # Removing the first row (used as column names) from each dataframe
+    transposed_bins_list[0] = transposed_bins_list[0].iloc[1:]
+    transposed_bins_list[1] = transposed_bins_list[1].iloc[1:]
+    transposed_bins_list[2] = transposed_bins_list[2].iloc[1:]
+    transposed_bins_list[3] = transposed_bins_list[3].iloc[1:]
+    transposed_bins_list[4] = transposed_bins_list[4].iloc[1:]
+    transposed_bins_list[5] = transposed_bins_list[5].iloc[1:]
+    transposed_bins_list[6] = transposed_bins_list[6].iloc[1:]
+    transposed_bins_list[7] = transposed_bins_list[7].iloc[1:]
+    transposed_bins_list[8] = transposed_bins_list[8].iloc[1:]
+    transposed_bins_list[9] = transposed_bins_list[9].iloc[1:]
+
+    # Adding 'Q1' prefix to column names of the first dataframe in the list
+    transposed_bins_list[0].columns = ['Q1  ' + str(col) for col in transposed_bins_list[0].columns]
+    transposed_bins_list[1].columns = ['Q2  ' + str(col) for col in transposed_bins_list[1].columns]
+    transposed_bins_list[2].columns = ['Q3  ' + str(col) for col in transposed_bins_list[2].columns]
+    transposed_bins_list[3].columns = ['Q4  ' + str(col) for col in transposed_bins_list[3].columns]
+    transposed_bins_list[4].columns = ['Q5  ' + str(col) for col in transposed_bins_list[4].columns]
+    transposed_bins_list[5].columns = ['Q6  ' + str(col) for col in transposed_bins_list[5].columns]
+    transposed_bins_list[6].columns = ['Q7  ' + str(col) for col in transposed_bins_list[6].columns]
+    transposed_bins_list[7].columns = ['Q8  ' + str(col) for col in transposed_bins_list[7].columns]
+    transposed_bins_list[8].columns = ['Q9  ' + str(col) for col in transposed_bins_list[8].columns]
+    transposed_bins_list[9].columns = ['Q10  ' + str(col) for col in transposed_bins_list[9].columns]
+
+    df1 = transposed_bins_list[0]
+    df2 = transposed_bins_list[1]
+    df3 = transposed_bins_list[2]
+    df4 = transposed_bins_list[3]
+    df5 = transposed_bins_list[4]
+    df6 = transposed_bins_list[5]
+    df7 = transposed_bins_list[6]
+    df8 = transposed_bins_list[7]
+    df9 = transposed_bins_list[8]
+    df10 = transposed_bins_list[9]
+
+    questions_df = pd.concat([df1,df2.set_index(df1.index), df3.set_index(df1.index), df4.set_index(df1.index), df5.set_index(df1.index), df6.set_index(df1.index), df7.set_index(df1.index), df8.set_index(df1.index), df9.set_index(df1.index), df10.set_index(df1.index)], axis=1)
+    # Resetting index if needed
+    questions_df.reset_index(drop=True, inplace=True)
     
     # Update session state
     data = st.session_state['data']
@@ -241,12 +194,56 @@ def add_submission(updated_bins_question_1_df, updated_bins_question_2_df):
     USER_FULL_NAME = 'User Full Name'
     USER_PROF_CATEGORY = 'User Professional Category'
     USER_POSITION = 'User Working Position'
-    MIN_EFF_SIZE = 'Minimum Effect Size'
+    MIN_EFF_SIZE_Q1 = 'Minimum Effect Size Q1'
+    MIN_EFF_SIZE_Q2 = 'Minimum Effect Size Q2'
+    MIN_EFF_SIZE_Q3 = 'Minimum Effect Size Q3'
+    MIN_EFF_SIZE_Q4 = 'Minimum Effect Size Q4'
+    MIN_EFF_SIZE_Q5 = 'Minimum Effect Size Q5'
+    MIN_EFF_SIZE_Q6 = 'Minimum Effect Size Q6'
+    MIN_EFF_SIZE_Q7 = 'Minimum Effect Size Q7'
+    MIN_EFF_SIZE_Q8 = 'Minimum Effect Size Q8'
+    MIN_EFF_SIZE_Q9 = 'Minimum Effect Size Q9'
+    MIN_EFF_SIZE_Q10 = 'Minimum Effect Size Q10'
 
-    data[MIN_EFF_SIZE].append(safe_var('input_question_1'))
+
     data[USER_FULL_NAME].append(safe_var('user_full_name'))
     data[USER_POSITION].append(safe_var('user_position'))
     data[USER_PROF_CATEGORY].append(safe_var('professional_category'))
+    data[MIN_EFF_SIZE_Q1].append(safe_var('num_input_question1'))
+    data[MIN_EFF_SIZE_Q2].append(safe_var('num_input_question2'))
+    data[MIN_EFF_SIZE_Q3].append(safe_var('num_input_question3'))
+    data[MIN_EFF_SIZE_Q4].append(safe_var('num_input_question4'))
+    data[MIN_EFF_SIZE_Q5].append(safe_var('num_input_question5'))
+    data[MIN_EFF_SIZE_Q6].append(safe_var('num_input_question6'))
+    data[MIN_EFF_SIZE_Q7].append(safe_var('num_input_question7'))
+    data[MIN_EFF_SIZE_Q8].append(safe_var('num_input_question8'))
+    data[MIN_EFF_SIZE_Q9].append(safe_var('num_input_question9'))
+    data[MIN_EFF_SIZE_Q10].append(safe_var('num_input_question10'))
 
     st.session_state['data'] = data
+ 
     session_state_df = pd.DataFrame(data)
+    personal_data_df = session_state_df.iloc[:, :3]
+    min_eff_df = session_state_df.iloc[:, 3:]
+
+    concatenated_df = pd.concat([personal_data_df, questions_df.set_index(personal_data_df.index), min_eff_df.set_index(personal_data_df.index)], axis=1)
+
+    #save data to google sheet 
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+
+    #creds = ServiceAccountCredentials.from_json_keyfile_name('prior-beliefs-elicitation-keys.json', scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(secrets_to_json())
+    client = gspread.authorize(creds)
+
+    # Load the Google Sheet
+    sheet = client.open("Test").sheet1
+
+    #sheet_update = sheet.update([new_bins_df.columns.values.tolist()])
+    sheet = sheet.append_rows([concatenated_df.values.tolist()[1]])
+    #st.success('Data has been saved successfully.')
+    
+    #Navigate to the folder in Google Drive. Copy the Folder ID found in the URL. This is everything that comes after “folder/” in the URL.
+    #backup_sheet = client.create(f'Backup_{datetime.now()}_{data[USER_FULL_NAME]}', folder_id='1Pjz6JAf9MaVe_eSaAFpDhLFr4GMPj2jX').sheet1
+    #backup_sheet = backup_sheet.append_rows(concatenated_df.iloc[:2].values.tolist())
+    #backup_sheet.share('sara.gironi97@gmail.com', perm_type = 'user', role = 'writer')
+
